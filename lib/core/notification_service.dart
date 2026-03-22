@@ -9,7 +9,15 @@ class NotificationService {
 
     const settings = InitializationSettings(android: android);
 
-    await _plugin.initialize(settings);
+    await _plugin.initialize(
+      settings,
+       onDidReceiveNotificationResponse: (response) {
+    final payload = response.payload;
+    if (payload != null) {
+      // navigate manually later
+    }
+  },
+      );
   }
 
   static Future showNotification(String id) async {

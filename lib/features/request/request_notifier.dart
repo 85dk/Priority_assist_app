@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:crudops_application/features/request/request.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:hive/hive.dart';
 
 
 final requestProvider =
@@ -46,4 +47,32 @@ class RequestNotifier extends StateNotifier<List<Request>> {
       return r;
     }).toList();
   }
+  bool hasActiveJob() {
+  return state.any((r) => r.status == RequestStatus.in_progress);
+}
+
+void acceptRequest(String id) {
+  if (hasActiveJob()) {
+    // move to queue (keep as pending)
+    return;
+  }
+
+  updateStatus(id, RequestStatus.in_progress);
+}
+
+void declineRequest(String id) {
+  updateStatus(id, RequestStatus.declined);
+}
+
+void completeRequest(String id) {
+  updateStatus(id, RequestStatus.completed);
+}
+
+void cancelByCustomer(String id) {
+  updateStatus(id, RequestStatus.cancelledByCustomer);
+}
+void saveData() async {
+  final box = await Hive.openBox('requests');
+  box.put('data', state.map((e) => e.id).toList());
+}
 }

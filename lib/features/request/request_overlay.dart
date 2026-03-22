@@ -1,13 +1,17 @@
-import 'package:crudops_application/features/request/request.dart';
+import 'package:crudops_application/features/request/active_job_screen.dart';
 import 'package:crudops_application/features/request/request_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 
 void showRequestOverlay(BuildContext context, String id) {
-  showDialog(
+  showGeneralDialog(
     context: context,
-    builder: (_) => RequestOverlay(id: id),
+    barrierDismissible: false,
+    barrierLabel: "Request",
+    pageBuilder: (_, __, ___) {
+      return RequestOverlay(id: id);
+    },
   );
 }
 
@@ -21,31 +25,71 @@ class RequestOverlay extends ConsumerWidget {
     final request = ref.watch(requestProvider)
         .firstWhere((r) => r.id == id);
 
-    return AlertDialog(
-      title: Text("Incoming Request"),
-      content: Text("Time left: ${request.timeLeft}"),
-      actions: [
-        ElevatedButton(
-          onPressed: () {
-            ref
-                .read(requestProvider.notifier)
-                .updateStatus(id, RequestStatus.accepted);
+    return Scaffold(
+      backgroundColor: Colors.black.withOpacity(0.8),
+      body: Center(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          margin: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("🚨 Emergency Request",
+                  style: TextStyle(fontSize: 20)),
 
-            Navigator.pop(context);
-          },
-          child: Text("Accept"),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            ref
-                .read(requestProvider.notifier)
-                .updateStatus(id, RequestStatus.declined);
+              const SizedBox(height: 20),
 
-            Navigator.pop(context);
-          },
-          child: Text("Decline"),
+              Text("Time left: ${request.timeLeft}s",
+                  style: const TextStyle(fontSize: 24)),
+
+              const SizedBox(height: 20),
+
+              LinearProgressIndicator(
+                value: request.timeLeft / 45,
+              ),
+
+              const SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      ref.read(requestProvider.notifier)
+                          .acceptRequest(id);
+
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green),
+                    child: const Text("ACCEPT"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      ref.read(requestProvider.notifier)
+                          .declineRequest(id);
+
+                      Navigator.pop(context);
+                        Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ActiveJobScreen(id: id),
+    ));
+                    },
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red),
+                    child: const Text("DECLINE"),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }
