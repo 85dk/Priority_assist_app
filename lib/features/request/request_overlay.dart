@@ -49,7 +49,7 @@ class RequestOverlay extends ConsumerWidget {
               const SizedBox(height: 20),
 
               LinearProgressIndicator(
-                value: request.timeLeft / 45,
+                value: request.timeLeft / 45.0
               ),
 
               const SizedBox(height: 20),
@@ -57,33 +57,34 @@ class RequestOverlay extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      ref.read(requestProvider.notifier)
-                          .acceptRequest(id);
+                 // ACCEPT
+ElevatedButton(
+  onPressed: () {
+    ref.read(requestProvider.notifier).acceptRequest(id);
 
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green),
-                    child: const Text("ACCEPT"),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      ref.read(requestProvider.notifier)
-                          .declineRequest(id);
+    Navigator.pop(context);
 
-                      Navigator.pop(context);
-                        Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ActiveJobScreen(id: id),
-    ));
-                    },
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red),
-                    child: const Text("DECLINE"),
-                  ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActiveJobScreen(id: id),
+      ),
+    );
+  },
+  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+  child: const Text("ACCEPT"),
+),
+
+// DECLINE (FIXED)
+ElevatedButton(
+  onPressed: () {
+    ref.read(requestProvider.notifier).declineRequest(id);
+
+    Navigator.pop(context);
+  },
+  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+  child: const Text("DECLINE"),
+),
                 ],
               ),
             ],

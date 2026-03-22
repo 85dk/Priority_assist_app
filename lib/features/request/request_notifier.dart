@@ -13,6 +13,7 @@ class RequestNotifier extends StateNotifier<List<Request>> {
   RequestNotifier() : super([]);
 
   Timer? timer;
+  final Map<String, Timer> _timers = {};
 
   void addRequest(Request request) {
     state = [...state, request];
@@ -20,24 +21,25 @@ class RequestNotifier extends StateNotifier<List<Request>> {
   }
 
   void startTimer(String id) {
-    timer?.cancel();
+  _timers[id]?.cancel();
 
-    timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      state = state.map((r) {
-        if (r.id == id && r.timeLeft > 0) {
-          return r.copyWith(timeLeft: r.timeLeft - 1);
-        }
-        return r;
-      }).toList();
+  _timers[id] = Timer.periodic(const Duration(seconds: 1), (timer) {
+    final request = state.firstWhere((r) => r.id == id);
 
-      final req = state.firstWhere((r) => r.id == id);
+    if (request.timeLeft <= 0) {
+      updateStatus(id, RequestStatus.expired);
+      timer.cancel();
+      return;
+    }
 
-      if (req.timeLeft == 0 && req.status == RequestStatus.pending) {
-        updateStatus(id, RequestStatus.expired);
-        timer.cancel();
+    state = state.map((r) {
+      if (r.id == id) {
+        return r.copyWith(timeLeft: r.timeLeft - 1);
       }
-    });
-  }
+      return r;
+    }).toList();
+  });
+}
 
   void updateStatus(String id, RequestStatus status) {
     state = state.map((r) {
@@ -52,15 +54,19 @@ class RequestNotifier extends StateNotifier<List<Request>> {
 }
 
 void acceptRequest(String id) {
-  if (hasActiveJob()) {
-    // move to queue (keep as pending)
-    return;
-  }
+  if (hasActiveJob()) return;
 
-  updateStatus(id, RequestStatus.in_progress);
+  _timers[id]?.cancel();
+
+  state = state.map((r) {
+    if (r.id == id) {
+      return r.copyWith(status: RequestStatus.in_progress);
+    }
+    return r;
+  }).toList();
 }
-
 void declineRequest(String id) {
+  _timers[id]?.cancel();
   updateStatus(id, RequestStatus.declined);
 }
 
@@ -74,5 +80,13 @@ void cancelByCustomer(String id) {
 void saveData() async {
   final box = await Hive.openBox('requests');
   box.put('data', state.map((e) => e.id).toList());
+}
+void activateNextFromQueue() {
+  final pendingRequests = state.where((r) => r.status == RequestStatus.pending);
+
+  if (pendingRequests.isNotEmpty) {
+    final next = pendingRequests.first;
+    updateStatus(next.id, RequestStatus.in_progress);
+  }
 }
 }

@@ -1,15 +1,18 @@
+import 'package:crudops_application/features/request/request.dart';
+import 'package:crudops_application/features/request/request_notifier.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ActiveJobScreen extends StatefulWidget {
+class ActiveJobScreen extends ConsumerStatefulWidget {
   final String id;
 
   const ActiveJobScreen({required this.id, super.key});
 
   @override
-  State<ActiveJobScreen> createState() => _ActiveJobScreenState();
+  ConsumerState<ActiveJobScreen> createState() => _ActiveJobScreenState();
 }
 
-class _ActiveJobScreenState extends State<ActiveJobScreen> {
+class _ActiveJobScreenState extends ConsumerState<ActiveJobScreen> {
   int currentStep = 0;
 
   void nextStep() {
@@ -38,11 +41,18 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         currentStep: currentStep,
         onStepContinue: () {
           if (currentStep == 2) {
-            // FINAL STEP → COMPLETE JOB
+            // ✅ FINAL STEP → COMPLETE JOB
+
+            ref.read(requestProvider.notifier).updateStatus(
+                  widget.id,
+                  RequestStatus.completed,
+                );
+               ref.read(requestProvider.notifier).activateNextFromQueue();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Job Completed")),
             );
-            Navigator.pop(context);
+
+            Navigator.pop(context); // back to home
           } else {
             nextStep();
           }
@@ -51,45 +61,17 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
         steps: [
           Step(
             title: const Text("On the Way"),
-            content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text("Customer Location"),
-                SizedBox(height: 10),
-                Text("Map Placeholder"),
-              ],
-            ),
+            content: const Text("Map Placeholder"),
             isActive: currentStep >= 0,
           ),
           Step(
             title: const Text("Checklist"),
-            content: Column(
-              children: const [
-                CheckboxListTile(
-                  value: false,
-                  onChanged: null,
-                  title: Text("Checked Tools"),
-                ),
-                CheckboxListTile(
-                  value: false,
-                  onChanged: null,
-                  title: Text("Reached Location"),
-                ),
-              ],
-            ),
+            content: const Text("Task Checklist"),
             isActive: currentStep >= 1,
           ),
           Step(
             title: const Text("Complete Job"),
-            content: Column(
-              children: const [
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: "Notes",
-                  ),
-                ),
-              ],
-            ),
+            content: const Text("Finish Job"),
             isActive: currentStep >= 2,
           ),
         ],
